@@ -1,0 +1,5 @@
+Ticker
+AMZN
+META
+NVDA
+MSFT

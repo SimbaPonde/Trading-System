@@ -1,0 +1,10 @@
+Ticker
+SLV
+CPER
+PALL
+GLD
+PPLT
+USO
+UNG
+DBA
+DBC

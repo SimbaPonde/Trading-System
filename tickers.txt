@@ -1,0 +1,17 @@
+# Sample tickers for unified trading system
+# Add your tickers here (one per line)
+
+# Tech stocks
+AAPL
+MSFT
+GOOGL
+AMZN
+NVDA
+META
+TSLA
+
+# ETFs
+SPY
+QQQ
+DIA
+IWM

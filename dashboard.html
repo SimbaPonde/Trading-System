@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Trading System Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">🤖 AI Trading System</h1>
+                    <p class="text-sm text-gray-600">Automated trading with AI, ML & Earnings analysis</p>
+                </div>
+                <div class="flex items-center space-x-2 text-green-600">
+                    <div class="w-2 h-2 bg-green-600 rounded-full pulse"></div>
+                    <span class="text-sm font-medium">System Active</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <div class="bg-white border-b">
+        <div class="max-w-7xl mx-auto px-4">
+            <nav class="flex space-x-8">
+                <button onclick="showTab('dashboard')" id="tab-dashboard" class="py-4 px-2 border-b-2 border-blue-500 text-blue-600 font-medium text-sm">Dashboard</button>
+                <button onclick="showTab('backtest')" id="tab-backtest" class="py-4 px-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-gray-700">Backtest</button>
+                <button onclick="showTab('trades')" id="tab-trades" class="py-4 px-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-gray-700">Trades</button>
+                <button onclick="showTab('analytics')" id="tab-analytics" class="py-4 px-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-gray-700">Analytics</button>
+                <button onclick="showTab('live')" id="tab-live" class="py-4 px-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-gray-700">Live Trading</button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Dashboard Tab -->
+        <div id="content-dashboard" class="space-y-6">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <p class="text-sm text-gray-600 mb-1">Portfolio Value</p>
+                    <p class="text-2xl font-bold" id="portfolio-value">$100,000</p>
+                    <p class="text-sm text-green-600 mt-2">+0.00%</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <p class="text-sm text-gray-600 mb-1">Active Trades</p>
+                    <p class="text-2xl font-bold" id="active-trades">0</p>
+                    <p class="text-sm text-gray-600 mt-2">Total executed</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <p class="text-sm text-gray-600 mb-1">Win Rate</p>
+                    <p class="text-2xl font-bold" id="win-rate">0%</p>
+                    <p class="text-sm text-gray-600 mt-2">Success rate</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <p class="text-sm text-gray-600 mb-1">Total P&L</p>
+                    <p class="text-2xl font-bold text-green-600" id="total-pnl">$0</p>
+                    <p class="text-sm text-gray-600 mt-2">Net profit/loss</p>
+                </div>
+            </div>
+
+            <!-- Performance Chart -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold mb-4">Portfolio Performance</h2>
+                <canvas id="performanceChart" height="80"></canvas>
+            </div>
+
+            <!-- Recent Trades -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold mb-4">Recent Trades</h2>
+                <div id="recent-trades" class="space-y-3">
+                    <p class="text-gray-500 text-center py-4">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backtest Tab -->
+        <div id="content-backtest" class="space-y-6 hidden">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold mb-4">Backtest Configuration</h2>
+                <form id="backtest-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Interval</label>
+                        <select id="interval" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            <option value="1m">1 minute</option>
+                            <option value="5m">5 minutes</option>
+                            <option value="15m" selected>15 minutes</option>
+                            <option value="1h">1 hour</option>
+                            <option value="4h">4 hours</option>
+                            <option value="1d">1 day</option>
+                        </select>
+                    </div>
+                    
+                    <!-- NEW: Date Range Mode Selector -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date Range Mode</label>
+                        <select id="date_mode" onchange="toggleDateMode()" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            <option value="lookback">Lookback Days</option>
+                            <option value="custom">Custom Date Range</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Lookback Days Mode -->
+                    <div id="lookback-mode" class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Lookback Days</label>
+                        <input type="number" id="lookback_days" value="30" min="1" max="730" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <p class="text-xs text-gray-500 mt-1">Number of days to look back from today</p>
+                    </div>
+                    
+                    <!-- Custom Date Range Mode (hidden by default) -->
+                    <div id="custom-dates-mode" class="md:col-span-2 hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                                <input type="date" id="start_date" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                                <input type="date" id="end_date" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Select custom start and end dates for backtest</p>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tickers (comma-separated)</label>
+                        <input type="text" id="tickers" value="AAPL,NVDA,MSFT,AMZN,META,TSLA,AVGO" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Profit Target (%)</label>
+                        <input type="number" id="profit_target" value="5" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Stop Loss (%)</label>
+                        <input type="number" id="stop_loss" value="3" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Strategy Selection</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="enable_mean_reversion" checked class="mr-2">
+                                <span class="text-sm font-medium">Mean Reversion</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="enable_price_action" checked class="mr-2">
+                                <span class="text-sm font-medium">Price Action</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="enable_news_macro" checked class="mr-2">
+                                <span class="text-sm font-medium">News/Macro</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="enable_earnings" checked class="mr-2">
+                                <span class="text-sm font-medium">Earnings/Insider</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="enable_news_pa_confluence" checked class="mr-2">
+                                <span class="text-sm">News+PA Confluence</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="enable_mr_pa_confluence" checked class="mr-2">
+                                <span class="text-sm">MR+PA Confluence</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">AI/ML Features</label>
+                        <div class="flex space-x-6">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="enable_ai" checked class="mr-2">
+                                <span class="text-sm">AI Filtering</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="enable_ml" checked class="mr-2">
+                                <span class="text-sm">ML Predictions</span>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+                <button onclick="runBacktest()" id="run-backtest-btn" class="mt-6 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium">
+                    Run Backtest
+                </button>
+                <div id="backtest-status" class="mt-4 hidden">
+                    <div class="bg-blue-50 border border-blue-200 rounded p-4">
+                        <p class="text-blue-800 font-medium">⏳ Running backtest...</p>
+                        <p class="text-sm text-blue-600 mt-1">This may take a few minutes</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div id="backtest-results" class="bg-white rounded-lg shadow p-6 hidden">
+                <h2 class="text-lg font-semibold mb-4">Backtest Results</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="results-grid"></div>
+            </div>
+        </div>
+
+        <!-- Trades Tab -->
+        <div id="content-trades" class="hidden">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold mb-4">All Trades</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ticker</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Side</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entry</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Exit</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">P&L</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trades-table" class="bg-white divide-y divide-gray-200">
+                            <tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="content-analytics" class="hidden space-y-6">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold mb-4">Performance Analytics</h2>
+                
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="p-4 bg-blue-50 rounded-lg">
+                        <p class="text-sm text-gray-600 mb-1">Total Return</p>
+                        <p class="text-2xl font-bold text-blue-600" id="analytics-return">0%</p>
+                    </div>
+                    <div class="p-4 bg-green-50 rounded-lg">
+                        <p class="text-sm text-gray-600 mb-1">Sharpe Ratio</p>
+                        <p class="text-2xl font-bold text-green-600" id="analytics-sharpe">0.0</p>
+                    </div>
+                    <div class="p-4 bg-purple-50 rounded-lg">
+                        <p class="text-sm text-gray-600 mb-1">Profit Factor</p>
+                        <p class="text-2xl font-bold text-purple-600" id="analytics-profit-factor">0.0</p>
+                    </div>
+                    <div class="p-4 bg-orange-50 rounded-lg">
+                        <p class="text-sm text-gray-600 mb-1">Max Drawdown</p>
+                        <p class="text-2xl font-bold text-orange-600" id="analytics-drawdown">$0</p>
+                    </div>
+                </div>
+
+                <!-- Detailed Analytics -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- AI/ML Performance -->
+                    <div class="p-4 border rounded-lg">
+                        <h3 class="font-semibold mb-3 text-gray-800">AI/ML Performance</h3>
+                        <div id="ai-stats" class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Total Signals:</span>
+                                <span class="font-medium" id="ai-total-signals">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">AI Approved:</span>
+                                <span class="font-medium text-green-600" id="ai-approval-rate">0%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">AI Rejected:</span>
+                                <span class="font-medium text-red-600" id="ai-rejected">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Quality Filtered:</span>
+                                <span class="font-medium" id="quality-rejected">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Regime Filtered:</span>
+                                <span class="font-medium" id="regime-rejected">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Execution Rate:</span>
+                                <span class="font-medium text-blue-600" id="execution-rate">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Risk Metrics -->
+                    <div class="p-4 border rounded-lg">
+                        <h3 class="font-semibold mb-3 text-gray-800">Risk Metrics</h3>
+                        <div id="risk-stats" class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Win Rate:</span>
+                                <span class="font-medium" id="risk-win-rate">0%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Avg Win:</span>
+                                <span class="font-medium text-green-600" id="risk-avg-win">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Avg Loss:</span>
+                                <span class="font-medium text-red-600" id="risk-avg-loss">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Profit Factor:</span>
+                                <span class="font-medium" id="risk-profit-factor">0.0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Max Drawdown:</span>
+                                <span class="font-medium text-red-600" id="risk-max-drawdown">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Sharpe Ratio:</span>
+                                <span class="font-medium" id="risk-sharpe">0.0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transaction Costs -->
+                    <div class="p-4 border rounded-lg">
+                        <h3 class="font-semibold mb-3 text-gray-800">Transaction Costs</h3>
+                        <div id="cost-stats" class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Gross P&L:</span>
+                                <span class="font-medium" id="cost-gross-pnl">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Commissions:</span>
+                                <span class="font-medium text-red-600" id="cost-commissions">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Net P&L:</span>
+                                <span class="font-medium text-green-600" id="cost-net-pnl">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Cost/Trade:</span>
+                                <span class="font-medium" id="cost-per-trade">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Cost/Profit %:</span>
+                                <span class="font-medium" id="cost-ratio">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trade Distribution -->
+                <div class="mt-6 p-4 border rounded-lg">
+                    <h3 class="font-semibold mb-3 text-gray-800">Trade Distribution by Category</h3>
+                    <div id="trade-distribution" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <p class="text-sm text-gray-500 col-span-full text-center py-4">No data available</p>
+                    </div>
+                </div>
+
+                <!-- Performance Stats -->
+                <div class="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="p-4 bg-gray-50 rounded text-center">
+                        <p class="text-sm text-gray-600 mb-1">Total Trades</p>
+                        <p class="text-xl font-bold" id="perf-total-trades">0</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded text-center">
+                        <p class="text-sm text-gray-600 mb-1">Winning Trades</p>
+                        <p class="text-xl font-bold text-green-600" id="perf-winning-trades">0</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded text-center">
+                        <p class="text-sm text-gray-600 mb-1">Losing Trades</p>
+                        <p class="text-xl font-bold text-red-600" id="perf-losing-trades">0</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded text-center">
+                        <p class="text-sm text-gray-600 mb-1">Forced Exits</p>
+                        <p class="text-xl font-bold text-orange-600" id="perf-forced-exits">0</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded text-center">
+                        <p class="text-sm text-gray-600 mb-1">Total Return</p>
+                        <p class="text-xl font-bold text-blue-600" id="perf-total-return">0%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Trading Tab -->
+        <div id="content-live" class="hidden">
+            <div class="bg-white rounded-lg shadow p-6 space-y-6">
+                <h2 class="text-lg font-semibold mb-4">Live Trading Control</h2>
+
+                <!-- Live Config -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tickers (comma-separated)</label>
+                        <input type="text" id="live_tickers" value="AAPL,NVDA,MSFT,AMZN,META,AVGO"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Interval</label>
+                        <select id="live_interval" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            <option value="1m">1 minute</option>
+                            <option value="5m" selected>5 minutes</option>
+                            <option value="15m">15 minutes</option>
+                            <option value="1h">1 hour</option>
+                            <option value="4h">4 hours</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Initial Balance</label>
+                        <input type="number" id="live_initial_balance" value="100000" step="1000"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Max Positions</label>
+                        <input type="number" id="live_max_positions" value="5"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Max Position Size (% of equity)</label>
+                        <input type="number" id="live_max_position_size" value="20" step="1"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Signal Cooldown (minutes)</label>
+                        <input type="number" id="live_cooldown_minutes" value="60"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="md:col-span-2 space-x-6">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" id="live_paper_trading" checked class="mr-2">
+                            <span class="text-sm">Paper Trading Mode</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" id="live_enable_ai" checked class="mr-2">
+                            <span class="text-sm">Enable AI Filtering</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" id="live_enable_ml" checked class="mr-2">
+                            <span class="text-sm">Enable ML Predictions</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" id="live_enable_earnings" checked class="mr-2">
+                            <span class="text-sm">Enable Earnings</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Start/Stop Buttons -->
+                <div class="flex flex-wrap items-center gap-4 mt-4">
+                    <button onclick="startLiveTrading()" id="btn-live-start"
+                            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium">
+                        Start Live Trading
+                    </button>
+                    <button onclick="stopLiveTrading()" id="btn-live-stop"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium" disabled>
+                        Stop Live Trading
+                    </button>
+                    <span id="live-status-text" class="text-sm text-gray-600">
+                        Status: Not running
+                    </span>
+                </div>
+
+                <!-- Live Status -->
+                <div id="live-status-panel" class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <div class="p-4 bg-gray-50 rounded">
+                        <p class="text-sm text-gray-600">Current Balance</p>
+                        <p class="text-2xl font-bold" id="live-balance">$0</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded">
+                        <p class="text-sm text-gray-600">Total P&L</p>
+                        <p class="text-2xl font-bold" id="live-total-pnl">$0</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded">
+                        <p class="text-sm text-gray-600">Trades Today</p>
+                        <p class="text-2xl font-bold" id="live-trades-today">0</p>
+                    </div>
+                </div>
+
+                <!-- Open Positions -->
+                <div class="mt-6">
+                    <h3 class="text-md font-semibold mb-2">Open Positions</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ticker</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Side</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Entry</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Current</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Size</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">P&L</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody id="live-positions-table" class="bg-white divide-y divide-gray-200">
+                                <tr><td colspan="7" class="px-4 py-3 text-center text-gray-500">No positions</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Live Trades -->
+                <div class="mt-6">
+                    <h3 class="text-md font-semibold mb-2">Completed Trades (Today)</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ticker</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Side</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Entry</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Exit</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">P&L</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Exit Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody id="live-trades-table" class="bg-white divide-y divide-gray-200">
+                                <tr><td colspan="6" class="px-4 py-3 text-center text-gray-500">No trades</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let performanceChart = null;
+
+        function showTab(tab) {
+            const tabs = ['dashboard', 'backtest', 'trades', 'analytics', 'live'];
+            tabs.forEach(t => {
+                document.getElementById(`content-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('border-blue-500', 'text-blue-600');
+                document.getElementById(`tab-${t}`).classList.add('border-transparent', 'text-gray-500');
+            });
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('border-blue-500', 'text-blue-600');
+            document.getElementById(`tab-${tab}`).classList.remove('border-transparent', 'text-gray-500');
+
+            // Load analytics data when switching to analytics tab
+            if (tab === 'analytics') {
+                loadAnalytics();
+            }
+        }
+
+        async function loadDashboard() {
+            try {
+                const response = await fetch('/api/dashboard');
+                const data = await response.json();
+                
+                document.getElementById('portfolio-value').textContent = `$${data.portfolio_value.toLocaleString()}`;
+                document.getElementById('active-trades').textContent = data.active_trades;
+                document.getElementById('win-rate').textContent = `${data.win_rate.toFixed(1)}%`;
+                document.getElementById('total-pnl').textContent = `$${data.total_pnl.toLocaleString()}`;
+
+                if (data.performance_data.length > 0) {
+                    updatePerformanceChart(data.performance_data);
+                }
+
+                if (data.recent_trades.length > 0) {
+                    const tradesHtml = data.recent_trades.map(trade => `
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                            <div class="flex items-center space-x-3">
+                                <div class="px-2 py-1 rounded text-xs font-medium ${trade.side === 'BUY' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                    ${trade.side}
+                                </div>
+                                <div>
+                                    <p class="font-medium">${trade.ticker}</p>
+                                    <p class="text-xs text-gray-500">${trade.category}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-medium ${trade.pnl > 0 ? 'text-green-600' : 'text-red-600'}">
+                                    $${trade.pnl.toFixed(0)}
+                                </p>
+                            </div>
+                        </div>
+                    `).join('');
+                    document.getElementById('recent-trades').innerHTML = tradesHtml;
+                } else {
+                    document.getElementById('recent-trades').innerHTML = '<p class="text-gray-500 text-center py-4">No trades yet. Run a backtest to see results.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                document.getElementById('recent-trades').innerHTML = '<p class="text-red-500 text-center py-4">Error loading data. Make sure the Flask server is running.</p>';
+            }
+        }
+
+        function updatePerformanceChart(data) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            
+            if (performanceChart) {
+                performanceChart.destroy();
+            }
+
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date),
+                    datasets: [{
+                        label: 'Portfolio Balance',
+                        data: data.map(d => d.balance),
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: true } },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function toggleDateMode() {
+            const dateMode = document.getElementById('date_mode').value;
+            const lookbackDiv = document.getElementById('lookback-mode');
+            const customDiv = document.getElementById('custom-dates-mode');
+            
+            if (dateMode === 'custom') {
+                lookbackDiv.classList.add('hidden');
+                customDiv.classList.remove('hidden');
+                
+                // Set default dates if empty
+                const endInput = document.getElementById('end_date');
+                const startInput = document.getElementById('start_date');
+                
+                if (!endInput.value) {
+                    const today = new Date();
+                    endInput.value = today.toISOString().split('T')[0];
+                }
+                
+                if (!startInput.value) {
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    startInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+                }
+            } else {
+                lookbackDiv.classList.remove('hidden');
+                customDiv.classList.add('hidden');
+            }
+        }
+
+        async function runBacktest() {
+            const btn = document.getElementById('run-backtest-btn');
+            const status = document.getElementById('backtest-status');
+            
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            status.classList.remove('hidden');
+
+            const dateMode = document.getElementById('date_mode').value;
+            const config = {
+                interval: document.getElementById('interval').value,
+                tickers: document.getElementById('tickers').value,
+                profit_target: parseFloat(document.getElementById('profit_target').value) / 100,
+                stop_loss: parseFloat(document.getElementById('stop_loss').value) / 100,
+                enable_ai: document.getElementById('enable_ai').checked,
+                enable_ml: document.getElementById('enable_ml').checked,
+                // Strategy selection
+                enable_mean_reversion: document.getElementById('enable_mean_reversion').checked,
+                enable_price_action: document.getElementById('enable_price_action').checked,
+                enable_news_macro: document.getElementById('enable_news_macro').checked,
+                enable_earnings: document.getElementById('enable_earnings').checked,
+                enable_news_pa_confluence: document.getElementById('enable_news_pa_confluence').checked,
+                enable_mr_pa_confluence: document.getElementById('enable_mr_pa_confluence').checked
+            };
+
+            // Add date range based on mode
+            if (dateMode === 'custom') {
+                const startDate = document.getElementById('start_date').value;
+                const endDate = document.getElementById('end_date').value;
+                
+                if (!startDate || !endDate) {
+                    alert('Please select both start and end dates');
+                    btn.disabled = false;
+                    btn.textContent = 'Run Backtest';
+                    status.classList.add('hidden');
+                    return;
+                }
+                
+                config.use_custom_dates = true;
+                config.start_date = startDate;
+                config.end_date = endDate;
+            } else {
+                config.use_custom_dates = false;
+                config.lookback_days = parseInt(document.getElementById('lookback_days').value);
+            }
+
+            try {
+                const response = await fetch('/api/backtest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+
+                if (response.ok) {
+                    checkBacktestStatus();
+                } else {
+                    alert('Failed to start backtest');
+                    btn.disabled = false;
+                    btn.textContent = 'Run Backtest';
+                    status.classList.add('hidden');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = 'Run Backtest';
+                status.classList.add('hidden');
+            }
+        }
+
+        async function checkBacktestStatus() {
+            const btn = document.getElementById('run-backtest-btn');
+            const status = document.getElementById('backtest-status');
+            const resultsDiv = document.getElementById('backtest-results');
+            
+            const response = await fetch('/api/backtest/status');
+            const data = await response.json();
+
+            if (data.is_running) {
+                setTimeout(checkBacktestStatus, 2000);
+            } else if (data.results) {
+                btn.disabled = false;
+                btn.textContent = 'Run Backtest';
+                status.classList.add('hidden');
+                
+                resultsDiv.classList.remove('hidden');
+                const summary = data.results.summary;
+                document.getElementById('results-grid').innerHTML = `
+                    <div class="text-center p-4 bg-gray-50 rounded">
+                        <p class="text-sm text-gray-600">Return</p>
+                        <p class="text-2xl font-bold text-green-600">+${((summary.total_pl / summary.initial_balance) * 100).toFixed(2)}%</p>
+                    </div>
+                    <div class="text-center p-4 bg-gray-50 rounded">
+                        <p class="text-sm text-gray-600">Trades</p>
+                        <p class="text-2xl font-bold">${summary.trades}</p>
+                    </div>
+                    <div class="text-center p-4 bg-gray-50 rounded">
+                        <p class="text-sm text-gray-600">P&L</p>
+                        <p class="text-2xl font-bold text-green-600">$${summary.total_pl.toFixed(2)}</p>
+                    </div>
+                    <div class="text-center p-4 bg-gray-50 rounded">
+                        <p class="text-sm text-gray-600">Final Balance</p>
+                        <p class="text-2xl font-bold">$${summary.final_balance.toFixed(2)}</p>
+                    </div>
+                `;
+                
+                loadDashboard();
+                loadTrades();
+                loadAnalytics(); // Also refresh analytics
+            } else if (data.error) {
+                alert('Backtest failed: ' + data.error);
+                btn.disabled = false;
+                btn.textContent = 'Run Backtest';
+                status.classList.add('hidden');
+            }
+        }
+
+        async function loadTrades() {
+            try {
+                const response = await fetch('/api/trades');
+                const trades = await response.json();
+                
+                if (trades.length > 0) {
+                    const html = trades.map(trade => `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium">${trade.ticker}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs font-medium rounded ${trade.side === 'BUY' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                    ${trade.side}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">$${trade.entry.toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">$${trade.exit.toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-medium ${trade.pnl > 0 ? 'text-green-600' : 'text-red-600'}">
+                                $${trade.pnl.toFixed(2)}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${trade.category}</td>
+                        </tr>
+                    `).join('');
+                    document.getElementById('trades-table').innerHTML = html;
+                } else {
+                    document.getElementById('trades-table').innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No trades yet</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading trades:', error);
+            }
+        }
+
+        async function loadAnalytics() {
+            try {
+                const response = await fetch('/api/analytics');
+                const data = await response.json();
+                
+                // Summary cards
+                if (data.performance_stats) {
+                    document.getElementById('analytics-return').textContent = 
+                        `${data.performance_stats.total_return_pct.toFixed(2)}%`;
+                }
+                if (data.risk_metrics) {
+                    document.getElementById('analytics-sharpe').textContent = 
+                        data.risk_metrics.sharpe_ratio.toFixed(2);
+                    document.getElementById('analytics-profit-factor').textContent = 
+                        data.risk_metrics.profit_factor.toFixed(2);
+                    document.getElementById('analytics-drawdown').textContent = 
+                        `$${Math.abs(data.risk_metrics.max_drawdown).toFixed(0)}`;
+                }
+
+                // AI/ML Performance
+                if (data.ai_performance) {
+                    document.getElementById('ai-total-signals').textContent = data.ai_performance.total_signals;
+                    document.getElementById('ai-approval-rate').textContent = 
+                        `${data.ai_performance.ai_approval_rate.toFixed(1)}%`;
+                    document.getElementById('ai-rejected').textContent = data.ai_performance.ai_rejected;
+                    document.getElementById('quality-rejected').textContent = data.ai_performance.quality_rejected;
+                    document.getElementById('regime-rejected').textContent = data.ai_performance.regime_rejected;
+                    document.getElementById('execution-rate').textContent = 
+                        `${data.ai_performance.execution_rate.toFixed(1)}%`;
+                }
+
+                // Risk Metrics
+                if (data.risk_metrics) {
+                    document.getElementById('risk-win-rate').textContent = 
+                        `${data.risk_metrics.win_rate.toFixed(1)}%`;
+                    document.getElementById('risk-avg-win').textContent = 
+                        `$${data.risk_metrics.avg_win.toFixed(2)}`;
+                    document.getElementById('risk-avg-loss').textContent = 
+                        `$${data.risk_metrics.avg_loss.toFixed(2)}`;
+                    document.getElementById('risk-profit-factor').textContent = 
+                        data.risk_metrics.profit_factor.toFixed(2);
+                    document.getElementById('risk-max-drawdown').textContent = 
+                        `$${Math.abs(data.risk_metrics.max_drawdown).toFixed(0)}`;
+                    document.getElementById('risk-sharpe').textContent = 
+                        data.risk_metrics.sharpe_ratio.toFixed(2);
+                }
+
+                // Cost Analysis
+                if (data.cost_analysis) {
+                    document.getElementById('cost-gross-pnl').textContent = 
+                        `$${data.cost_analysis.gross_pnl.toFixed(2)}`;
+                    document.getElementById('cost-commissions').textContent = 
+                        `$${data.cost_analysis.estimated_commissions.toFixed(2)}`;
+                    document.getElementById('cost-net-pnl').textContent = 
+                        `$${data.cost_analysis.net_pnl.toFixed(2)}`;
+                    document.getElementById('cost-per-trade').textContent = 
+                        `$${data.cost_analysis.commission_per_trade.toFixed(2)}`;
+                    document.getElementById('cost-ratio').textContent = 
+                        `${data.cost_analysis.cost_to_profit_ratio.toFixed(2)}%`;
+                }
+
+                // Trade Distribution
+                if (data.trade_distribution && data.trade_distribution.by_category) {
+                    const categories = data.trade_distribution.by_category;
+                    const html = Object.entries(categories).map(([cat, stats]) => `
+                        <div class="p-3 bg-gray-50 rounded">
+                            <p class="text-sm font-medium text-gray-700">${cat}</p>
+                            <p class="text-lg font-bold">${stats.count} trades</p>
+                            <p class="text-sm ${stats.pnl >= 0 ? 'text-green-600' : 'text-red-600'}">
+                                $${stats.pnl.toFixed(0)}
+                            </p>
+                        </div>
+                    `).join('');
+                    document.getElementById('trade-distribution').innerHTML = html;
+                }
+
+                // Performance Stats
+                if (data.performance_stats) {
+                    document.getElementById('perf-total-trades').textContent = data.performance_stats.total_trades;
+                    document.getElementById('perf-winning-trades').textContent = data.performance_stats.winning_trades;
+                    document.getElementById('perf-losing-trades').textContent = data.performance_stats.losing_trades;
+                    document.getElementById('perf-forced-exits').textContent = data.performance_stats.forced_exits;
+                    document.getElementById('perf-total-return').textContent = 
+                        `${data.performance_stats.total_return_pct.toFixed(2)}%`;
+                }
+
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+
+        async function startLiveTrading() {
+            const btnStart = document.getElementById('btn-live-start');
+            const btnStop = document.getElementById('btn-live-stop');
+            const statusText = document.getElementById('live-status-text');
+
+            btnStart.disabled = true;
+            statusText.textContent = 'Status: Starting live trading...';
+
+            const config = {
+                tickers: document.getElementById('live_tickers').value,
+                interval: document.getElementById('live_interval').value,
+                initial_balance: parseFloat(document.getElementById('live_initial_balance').value),
+                max_positions: parseInt(document.getElementById('live_max_positions').value),
+                max_position_size: parseFloat(document.getElementById('live_max_position_size').value) / 100,
+                cooldown_minutes: parseInt(document.getElementById('live_cooldown_minutes').value),
+                paper_trading: document.getElementById('live_paper_trading').checked,
+                enable_ai: document.getElementById('live_enable_ai').checked,
+                enable_ml: document.getElementById('live_enable_ml').checked,
+                enable_earnings: document.getElementById('live_enable_earnings').checked
+            };
+
+            try {
+                const response = await fetch('/api/live/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    statusText.textContent = 'Status: Running';
+                    btnStop.disabled = false;
+                    pollLiveStatus();
+                } else {
+                    alert('Failed to start live trading: ' + (data.error || 'Unknown error'));
+                    btnStart.disabled = false;
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                btnStart.disabled = false;
+            }
+        }
+
+        async function stopLiveTrading() {
+            const btnStart = document.getElementById('btn-live-start');
+            const btnStop = document.getElementById('btn-live-stop');
+            const statusText = document.getElementById('live-status-text');
+
+            btnStop.disabled = true;
+            statusText.textContent = 'Status: Stopping live trading...';
+
+            try {
+                const response = await fetch('/api/live/stop', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    statusText.textContent = 'Status: Stopped';
+                    if (typeof data.final_balance === 'number') {
+                        document.getElementById('live-balance').textContent = `$${data.final_balance.toFixed(2)}`;
+                    }
+                    if (typeof data.total_pnl === 'number') {
+                        document.getElementById('live-total-pnl').textContent = `$${data.total_pnl.toFixed(2)}`;
+                    }
+                    btnStart.disabled = false;
+                } else {
+                    alert('Failed to stop live trading: ' + (data.error || 'Unknown error'));
+                    btnStop.disabled = false;
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                btnStop.disabled = false;
+            }
+        }
+
+        async function pollLiveStatus() {
+            try {
+                const response = await fetch('/api/live/status');
+                const data = await response.json();
+
+                if (data.error) {
+                    console.warn('Live status error:', data.error);
+                    return;
+                }
+
+                const statusText = document.getElementById('live-status-text');
+                const btnStart = document.getElementById('btn-live-start');
+                const btnStop = document.getElementById('btn-live-stop');
+
+                if (data.is_running === false) {
+                    statusText.textContent = 'Status: Not running';
+                    btnStart.disabled = false;
+                    btnStop.disabled = true;
+                    return;
+                }
+
+                statusText.textContent = 'Status: Running';
+                btnStart.disabled = true;
+                btnStop.disabled = false;
+
+                if (typeof data.balance === 'number') {
+                    document.getElementById('live-balance').textContent = `$${data.balance.toFixed(2)}`;
+                }
+                if (typeof data.total_pnl === 'number') {
+                    document.getElementById('live-total-pnl').textContent = `$${data.total_pnl.toFixed(2)}`;
+                }
+                if (typeof data.trades_today === 'number') {
+                    document.getElementById('live-trades-today').textContent = data.trades_today;
+                }
+
+                // Refresh positions & trades
+                loadLivePositions();
+                loadLiveTrades();
+
+                // Poll again after 5 seconds
+                setTimeout(pollLiveStatus, 5000);
+            } catch (error) {
+                console.error('Error polling live status:', error);
+            }
+        }
+
+        async function loadLivePositions() {
+            try {
+                const response = await fetch('/api/live/positions');
+                const positions = await response.json();
+
+                const tbody = document.getElementById('live-positions-table');
+                if (!Array.isArray(positions) || positions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-3 text-center text-gray-500">No positions</td></tr>';
+                    return;
+                }
+
+                const html = positions.map(p => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-2">${p.ticker}</td>
+                        <td class="px-4 py-2">
+                            <span class="px-2 py-1 text-xs font-medium rounded ${p.side === 'BUY' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                ${p.side}
+                            </span>
+                        </td>
+                        <td class="px-4 py-2">$${p.entry_price.toFixed(2)}</td>
+                        <td class="px-4 py-2">$${p.current_price.toFixed(2)}</td>
+                        <td class="px-4 py-2">${p.size}</td>
+                        <td class="px-4 py-2 ${p.pnl >= 0 ? 'text-green-600' : 'text-red-600'}">
+                            $${p.pnl.toFixed(2)} (${(p.pnl_pct * 100).toFixed(2)}%)
+                        </td>
+                        <td class="px-4 py-2 text-xs text-gray-500">${p.reason || ''}</td>
+                    </tr>
+                `).join('');
+
+                tbody.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading live positions:', error);
+            }
+        }
+
+        async function loadLiveTrades() {
+            try {
+                const response = await fetch('/api/live/trades');
+                const trades = await response.json();
+
+                const tbody = document.getElementById('live-trades-table');
+                if (!Array.isArray(trades) || trades.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-3 text-center text-gray-500">No trades</td></tr>';
+                    return;
+                }
+
+                const html = trades.map(t => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-2">${t.ticker}</td>
+                        <td class="px-4 py-2">
+                            <span class="px-2 py-1 text-xs font-medium rounded ${t.side === 'BUY' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                ${t.side}
+                            </span>
+                        </td>
+                        <td class="px-4 py-2">$${t.entry_price.toFixed(2)}</td>
+                        <td class="px-4 py-2">$${t.exit_price.toFixed(2)}</td>
+                        <td class="px-4 py-2 ${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'}">
+                            $${t.pnl.toFixed(2)} (${(t.pnl_pct * 100).toFixed(2)}%)
+                        </td>
+                        <td class="px-4 py-2 text-xs text-gray-500">${t.exit_reason || ''}</td>
+                    </tr>
+                `).join('');
+
+                tbody.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading live trades:', error);
+            }
+        }
+
+        window.addEventListener('load', () => {
+            loadDashboard();
+            loadTrades();
+            // Optionally: pollLiveStatus(); // if you want auto-status at load
+        });
+    </script>
+</body>
+</html>

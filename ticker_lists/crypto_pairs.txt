@@ -1,0 +1,5 @@
+Ticker
+BTC-USD
+ETH-USD
+BNB-USD
+SOL-USD

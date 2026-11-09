@@ -1,0 +1,8 @@
+Ticker
+IWM
+MDY
+SPY
+QQQ
+DIA
+VTI
+VOO
